@@ -5,7 +5,7 @@ workspaces based on what the agent is actually doing — using a coding-agent CL
 generate the labels.
 
 Instead of a sidebar full of `worktree-quiet-stone-b6f5`, you get
-`Diagnosed Java environment configuration`.
+`Debugging push failure`.
 
 ## How it works
 
@@ -42,7 +42,16 @@ herdr server reload-config
 
 ## Configure
 
-Edit `config.toml`:
+The repo's `config.toml` holds the defaults. To override them durably — so your
+changes survive `herdr plugin install` updates — copy it into the plugin's config
+directory and edit that copy:
+
+```bash
+cp config.toml "$(herdr plugin config-dir blamattina.auto-rename)/config.toml"
+```
+
+The plugin reads `$HERDR_PLUGIN_CONFIG_DIR/config.toml` first and falls back to the
+bundled default. The settings:
 
 ```toml
 # Shell command prefix used to generate the label.
@@ -62,7 +71,7 @@ delay_seconds = 5
 
 The `generator` is any CLI that accepts a prompt as its final argument and prints
 a short response. The plugin takes the first line of output, strips quotes, and
-truncates to 40 characters.
+truncates to 24 characters.
 
 ## Requirements
 

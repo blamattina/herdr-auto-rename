@@ -1,0 +1,14 @@
+# Shell command prefix used to generate the label.
+# Receives the prompt as its last argument.
+# Default uses Claude Code; swap for any CLI that accepts a prompt string.
+# Examples:
+#   generator = "command claude --print"
+#   generator = "llm"
+generator = "command claude --print"
+
+# Lines of pane output to read as context for the label
+context_lines = 40
+
+# Seconds to wait after the agent starts working before reading output.
+# Gives the agent time to print its task before we sample it.
+delay_seconds = 5

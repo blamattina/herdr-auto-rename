@@ -67,11 +67,17 @@ context_lines = 40
 # Seconds to wait after the agent starts working before reading output.
 # Gives the agent time to print its task before we sample it.
 delay_seconds = 5
+
+# Max characters for a generated label. Also passed to the prompt, so the model
+# aims for this length and labels are hard-truncated to it as a safety net.
+# Lower it for narrow panes/tabs; raise it for a roomier sidebar.
+max_label_length = 24
 ```
 
 The `generator` is any CLI that accepts a prompt as its final argument and prints
 a short response. The plugin takes the first line of output, strips quotes, and
-truncates to 24 characters.
+truncates to `max_label_length` characters. Labels are short verb-first phrases
+(e.g. `Fixing devcontainer Java`).
 
 ## Requirements
 

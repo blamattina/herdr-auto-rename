@@ -10,5 +10,9 @@ pane_id=$(printf '%s' "$EVENT_JSON" | python3 -c \
   'import sys,json; d=json.load(sys.stdin); print(d.get("data",{}).get("pane_id",""))' 2>/dev/null || true)
 [ -z "$pane_id" ] && exit 0
 
-safe_id="${pane_id//:/--}"
-rm -f "${STATE_DIR}/workspace-renamed-${safe_id}"
+rm -f "${STATE_DIR}/workspace-renamed-${pane_id//:/--}"
+
+# Drop the tab name-tracking state if the event carries a tab id.
+tab_id=$(printf '%s' "$EVENT_JSON" | python3 -c \
+  'import sys,json; d=json.load(sys.stdin); print(d.get("data",{}).get("tab_id",""))' 2>/dev/null || true)
+[ -n "$tab_id" ] && rm -f "${STATE_DIR}/tab-name-${tab_id//:/--}"

@@ -1,8 +1,8 @@
 # herdr-auto-rename
 
-A [herdr](https://herdr.dev) plugin that automatically names your agent panes and
-workspaces based on what the agent is actually doing — using a coding-agent CLI to
-generate the labels.
+A [herdr](https://herdr.dev) plugin that automatically names your agent panes,
+tabs, and workspaces based on what the agent is actually doing — using a
+coding-agent CLI to generate the labels.
 
 Instead of a sidebar full of `worktree-quiet-stone-b6f5`, you get
 `Debugging push failure`.
@@ -15,8 +15,16 @@ transitions to `working`, it:
 1. Waits a few seconds (so the agent has printed what it's working on)
 2. Reads the recent pane output
 3. Asks a configurable coding-agent CLI to summarize it
-4. Renames the **agent** with what it's doing right now (updates on every turn)
-5. Renames the **workspace** with the overall goal of the session (set once)
+
+It names three things at different altitudes:
+
+4. The **agent** — what it's doing *right now*, the moment-to-moment action
+   (updates on every turn)
+5. The **tab** — the agent's current *task* (the unit of work). It keeps this
+   current, but only overwrites a default numeric label (`1`, `2`, `3`...) or a
+   name it set itself, so tabs you've named yourself are left alone
+6. The **workspace** — the *user's* overall goal for the session, inferred from
+   your requests (set once)
 
 When a pane closes, a `pane.closed` hook clears its saved state so the next
 session in that pane gets a fresh workspace label.

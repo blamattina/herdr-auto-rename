@@ -92,10 +92,10 @@ min_growth = 4
 # session rather than a thin or one-off opening request.
 min_goal_requests = 3
 
-# Context: leading user messages (anchor the goal), trailing messages (current
-# topic), and the per-message excerpt cap.
-head_user_messages = 2
-tail_messages = 6
+# Context for the agent/tab altitudes: how many recent messages to feed (the
+# current activity) and the per-message excerpt cap. The workspace goal is
+# inferred separately from the whole arc of user requests.
+tail_messages = 8
 message_max_chars = 600
 
 # Wait before sampling (lets the transcript flush); scrollback lines for the

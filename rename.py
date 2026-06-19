@@ -36,8 +36,7 @@ DEFAULTS = {
     "min_growth": 4,              # throttle: min new messages since last pass
     "min_messages": 2,            # don't name a barely-started session
     "min_goal_requests": 3,       # user requests needed before naming a workspace
-    "head_user_messages": 2,      # context: first N user messages (anchor goal)
-    "tail_messages": 6,           # context: last N messages (current topic)
+    "tail_messages": 8,           # context: last N messages (current activity)
     "message_max_chars": 600,     # per-message excerpt cap
 }
 
@@ -229,13 +228,14 @@ def extract_messages(agent, path):
 
 
 def build_context(messages, cfg):
-    """First user messages anchor the goal; trailing messages capture the current
-    topic. Deduped and per-message truncated."""
-    head = [m for m in messages if m[0] == "user"][:cfg["head_user_messages"]]
-    tail = messages[-cfg["tail_messages"]:] if cfg["tail_messages"] else []
+    """Recent messages only — what the agent is doing *now*. Used for the agent
+    and tab altitudes; the workspace goal uses build_goal_context instead. (Mixing
+    in early messages made these track the session's first task, not the current
+    one.)"""
+    tail = messages[-cfg["tail_messages"]:] if cfg["tail_messages"] else messages
     seen = set()
     parts = []
-    for role, text in head + tail:
+    for role, text in tail:
         excerpt = text[:cfg["message_max_chars"]]
         key = role + ":" + excerpt
         if key in seen:

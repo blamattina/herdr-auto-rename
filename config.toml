@@ -19,6 +19,11 @@ max_label_length = 24
 min_interval_seconds = 60
 min_growth = 4
 
+# A workspace is named once, from the user's overall goal. Wait for at least this
+# many user requests before naming, so the goal is synthesized from the whole
+# session rather than a thin or one-off opening request.
+min_goal_requests = 3
+
 # Context: how many leading user messages (anchor the goal) and trailing messages
 # (current topic) to feed the model, and the per-message excerpt cap.
 head_user_messages = 2

@@ -35,6 +35,7 @@ DEFAULTS = {
     "min_interval_seconds": 60,   # throttle: min seconds between passes per pane
     "min_growth": 4,              # throttle: min new messages since last pass
     "min_messages": 2,            # don't name a barely-started session
+    "min_goal_requests": 3,       # user requests needed before naming a workspace
     "head_user_messages": 2,      # context: first N user messages (anchor goal)
     "tail_messages": 6,           # context: last N messages (current topic)
     "message_max_chars": 600,     # per-message excerpt cap
@@ -244,6 +245,45 @@ def build_context(messages, cfg):
     return "\n".join(parts)
 
 
+def goal_requests(messages):
+    """The user's own requests, with interruption markers and injected/system
+    messages dropped. These define the durable goal — not the agent's activity."""
+    return [t for role, t in messages
+            if role == "user" and not t.startswith("[") and not t.startswith("<")]
+
+
+def build_goal_context(requests):
+    """A spread of user requests across the whole session (head anchors the goal,
+    tail keeps it current), deduped and per-request truncated."""
+    sample = requests[:6] + requests[-4:]
+    seen = set()
+    picked = []
+    for text in sample:
+        key = text[:80]
+        if key in seen:
+            continue
+        seen.add(key)
+        picked.append(text)
+    return "\n".join("user: " + t[:400].replace("\n", " ") for t in picked)
+
+
+def build_goal_prompt(current, context, max_len):
+    lines = [
+        "Below are a developer's requests across one coding session, in order.",
+        "Identify the SINGLE overarching project or goal they serve — the durable",
+        "theme, NOT the most recent step, NOT a one-off subtask. Ignore",
+        "acknowledgements, pasted terminal output, and meta-instructions like",
+        "'test it', 'commit this', 'continue'.",
+        "Output ONLY a 2-4 word, verb-first title. Capitalize only the first word; "
+        "keep acronyms uppercase. Under {} characters. No quotes or punctuation.".format(max_len),
+    ]
+    if current:
+        lines.append("The current title is: {}".format(current))
+        lines.append("If it still captures the overarching goal, reply with it EXACTLY.")
+    lines += ["", "Requests:", context]
+    return "\n".join(lines)
+
+
 def clean_pane(text, context_lines):
     """Fallback context: strip ANSI, box-drawing, and TUI markers from scrollback."""
     text = re.sub(r"\x1b\[[0-9;?]*[A-Za-z]", "", text)
@@ -394,18 +434,23 @@ def main():
                 herdr("tab", "rename", tab_id, tab_name)
                 _write_text(tab_state, tab_name)
 
-    # Workspace: the user's overall goal. Named once per workspace.
+    # Workspace: the user's overall goal. Named once per workspace, and only once
+    # there are enough user requests to infer a real goal — so we synthesize the
+    # durable theme from the whole arc of requests rather than locking in whatever
+    # was happening on the first pass.
     if workspace_id:
         ws_named = os.path.join(STATE_DIR, "ws-named-" + workspace_id.replace(":", "--"))
-        if not os.path.exists(ws_named):
+        requests = goal_requests(messages)
+        enough = (len(requests) >= cfg["min_goal_requests"]) if messages else bool(context.strip())
+        if not os.path.exists(ws_named) and enough:
+            ws_context = build_goal_context(requests) if requests else context
             ws_current = herdr_json("workspace", "get", workspace_id).get(
                 "result", {}).get("workspace", {}).get("label", "")
-            ws_name = relabel(
-                "workspace by the user's overall goal, inferred from their requests",
-                "'Build herdr plugin', 'Fix CI pipeline'",
-                ws_current, context, cfg,
+            ws_name = generate(
+                build_goal_prompt(ws_current, ws_context, cfg["max_label_length"]),
+                cfg["generator"], cfg["max_label_length"],
             )
-            if ws_name:
+            if ws_name and ws_name != ws_current:
                 herdr("workspace", "rename", workspace_id, ws_name)
                 _write_text(ws_named, ws_name)
 

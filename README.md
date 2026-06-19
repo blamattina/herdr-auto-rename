@@ -25,8 +25,10 @@ It names three things at different altitudes:
 5. The **tab** — the agent's current *task* (the unit of work). Only overwrites a
    default numeric label (`1`, `2`, `3`...) or a name it set itself, so tabs
    you've named yourself are left alone
-6. The **workspace** — the *user's* overall goal, inferred from your requests
-   (named once per workspace)
+6. The **workspace** — the *user's* overall goal, synthesized from the whole arc
+   of your requests (not recent activity). Named once per workspace, and only once
+   there are enough requests to infer a real goal — until then it keeps its
+   repo/cwd default rather than locking in a thin or one-off opening task
 
 Naming is **throttled** (a minimum interval plus a conversation-growth gate, with
 an in-flight guard) and **stable** (the model is shown the current label and
@@ -84,6 +86,11 @@ max_label_length = 24
 # messages since the last pass. Together they keep labels calm and cheap.
 min_interval_seconds = 60
 min_growth = 4
+
+# A workspace is named once, from the user's overall goal. Wait for at least this
+# many user requests before naming, so the goal is synthesized from the whole
+# session rather than a thin or one-off opening request.
+min_goal_requests = 3
 
 # Context: leading user messages (anchor the goal), trailing messages (current
 # topic), and the per-message excerpt cap.

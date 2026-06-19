@@ -22,9 +22,9 @@ transitions to `working`, it:
 It names three things at different altitudes:
 
 4. The **agent** — what it's doing *right now*, the moment-to-moment action
-5. The **tab** — the agent's current *task* (the unit of work). Only overwrites a
-   default numeric label (`1`, `2`, `3`...) or a name it set itself, so tabs
-   you've named yourself are left alone
+5. The **tab** — the high-level *area* of the agent's current task, as a terse
+   1-2 word topic. Only overwrites a default numeric label (`1`, `2`, `3`...) or a
+   name it set itself, so tabs you've named yourself are left alone
 6. The **workspace** — the *user's* overall goal, synthesized from the whole arc
    of your requests (not recent activity). Named once per workspace, and only once
    there are enough requests to infer a real goal — until then it keeps its

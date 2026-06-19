@@ -322,11 +322,11 @@ def generate(prompt, generator, max_len):
     return sanitize(first)[:max_len]
 
 
-def build_prompt(role_desc, examples, current, context, max_len):
+def build_prompt(role_desc, examples, current, context, max_len, style="2-4 word, verb-first"):
     lines = [
         "You name a {} for a developer running coding agents.".format(role_desc),
-        "From the conversation excerpt, output ONLY a 2-4 word, verb-first label "
-        "(e.g. {}).".format(examples),
+        "From the conversation excerpt, output ONLY a {} label "
+        "(e.g. {}).".format(style, examples),
         "Capitalize only the first word; keep acronyms uppercase. Stay under {} "
         "characters. No quotes, no punctuation, no explanation.".format(max_len),
     ]
@@ -339,10 +339,10 @@ def build_prompt(role_desc, examples, current, context, max_len):
     return "\n".join(lines)
 
 
-def relabel(role_desc, examples, current, context, cfg):
+def relabel(role_desc, examples, current, context, cfg, style="2-4 word, verb-first"):
     """Generate a label and return it only if it's a usable change."""
     name = generate(
-        build_prompt(role_desc, examples, current, context, cfg["max_label_length"]),
+        build_prompt(role_desc, examples, current, context, cfg["max_label_length"], style),
         cfg["generator"], cfg["max_label_length"],
     )
     if not name or name == current:
@@ -426,9 +426,10 @@ def main():
         tab_prev = _read_text(tab_state)
         if tab_label.isdigit() or tab_label == tab_prev:
             tab_name = relabel(
-                "tab by the agent's current task",
-                "'Tuning label prompts', 'Fixing Java env', 'Adding auth flow'",
+                "tab by the high-level area of the agent's current task",
+                "'Networking', 'Label tuning', 'Auth flow', 'Docs'",
                 tab_label, context, cfg,
+                style="1-2 word, high-level (the topic or area, not a sentence)",
             )
             if tab_name:
                 herdr("tab", "rename", tab_id, tab_name)

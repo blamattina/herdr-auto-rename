@@ -1,19 +1,34 @@
 # Shell command prefix used to generate the label.
 # Receives the prompt as its last argument.
-# Default uses Claude Code; swap for any CLI that accepts a prompt string.
+# Default uses Claude Code with session persistence disabled, so the summarizer's
+# own calls don't write transcripts that would pollute transcript discovery.
+# Swap for any CLI that accepts a prompt string.
 # Examples:
-#   generator = "command claude --print"
+#   generator = "command claude --print --no-session-persistence"
 #   generator = "llm"
-generator = "command claude --print"
-
-# Lines of pane output to read as context for the label
-context_lines = 40
-
-# Seconds to wait after the agent starts working before reading output.
-# Gives the agent time to print its task before we sample it.
-delay_seconds = 5
+generator = "command claude --print --no-session-persistence"
 
 # Max characters for a generated label. Also passed to the prompt, so the model
 # aims for this length and labels are hard-truncated to it as a safety net.
 # Lower it for narrow panes/tabs; raise it for a roomier sidebar.
 max_label_length = 24
+
+# Throttle: minimum seconds between naming passes for one pane, and the minimum
+# number of new conversation messages since the last pass. Together these keep
+# labels calm and cheap instead of churning on every turn.
+min_interval_seconds = 60
+min_growth = 4
+
+# Context: how many leading user messages (anchor the goal) and trailing messages
+# (current topic) to feed the model, and the per-message excerpt cap.
+head_user_messages = 2
+tail_messages = 6
+message_max_chars = 600
+
+# Seconds to wait after the agent starts working before sampling (lets the
+# transcript flush).
+delay_seconds = 2
+
+# Lines of terminal scrollback to read as context for agents without a parsed
+# transcript (fallback path).
+context_lines = 40

@@ -12,22 +12,28 @@ Instead of a sidebar full of `worktree-quiet-stone-b6f5`, you get
 The plugin hooks herdr's `pane.agent_status_changed` event. Each time an agent
 transitions to `working`, it:
 
-1. Waits a few seconds (so the agent has printed what it's working on)
-2. Reads the recent pane output
-3. Asks a configurable coding-agent CLI to summarize it
+1. Reads the running agent's own **transcript** — Claude, Codex, and Pi JSONL are
+   parsed into clean role-tagged messages (tool calls, thinking, and injected
+   harness noise stripped). Other agents fall back to terminal scrollback.
+2. Builds a context excerpt: the first user messages anchor the goal, the
+   trailing messages capture the current topic.
+3. Asks a configurable coding-agent CLI to summarize it.
 
 It names three things at different altitudes:
 
 4. The **agent** — what it's doing *right now*, the moment-to-moment action
-   (updates on every turn)
-5. The **tab** — the agent's current *task* (the unit of work). It keeps this
-   current, but only overwrites a default numeric label (`1`, `2`, `3`...) or a
-   name it set itself, so tabs you've named yourself are left alone
-6. The **workspace** — the *user's* overall goal for the session, inferred from
-   your requests (set once)
+5. The **tab** — the agent's current *task* (the unit of work). Only overwrites a
+   default numeric label (`1`, `2`, `3`...) or a name it set itself, so tabs
+   you've named yourself are left alone
+6. The **workspace** — the *user's* overall goal, inferred from your requests
+   (named once per workspace)
 
-When a pane closes, a `pane.closed` hook clears its saved state so the next
-session in that pane gets a fresh workspace label.
+Naming is **throttled** (a minimum interval plus a conversation-growth gate, with
+an in-flight guard) and **stable** (the model is shown the current label and
+keeps it when it still fits), so labels stay calm and cheap instead of churning
+on every turn. Each label is truncated to `max_label_length`.
+
+When a pane closes, a `pane.closed` hook clears its saved state.
 
 ## Install
 
@@ -62,30 +68,39 @@ The plugin reads `$HERDR_PLUGIN_CONFIG_DIR/config.toml` first and falls back to 
 bundled default. The settings:
 
 ```toml
-# Shell command prefix used to generate the label.
-# Receives the prompt as its last argument.
-# Default uses Claude Code; swap for any CLI that accepts a prompt string.
-#   generator = "command claude --print"
+# Shell command prefix used to generate the label. Receives the prompt as its
+# last argument. The default disables Claude's session persistence so the
+# summarizer's own calls don't write transcripts that pollute transcript
+# discovery. Swap for any CLI that accepts a prompt string.
+#   generator = "command claude --print --no-session-persistence"
 #   generator = "llm"
-generator = "command claude --print"
-
-# Lines of pane output to read as context for the label
-context_lines = 40
-
-# Seconds to wait after the agent starts working before reading output.
-# Gives the agent time to print its task before we sample it.
-delay_seconds = 5
+generator = "command claude --print --no-session-persistence"
 
 # Max characters for a generated label. Also passed to the prompt, so the model
 # aims for this length and labels are hard-truncated to it as a safety net.
-# Lower it for narrow panes/tabs; raise it for a roomier sidebar.
 max_label_length = 24
+
+# Throttle: min seconds between naming passes per pane, and min new conversation
+# messages since the last pass. Together they keep labels calm and cheap.
+min_interval_seconds = 60
+min_growth = 4
+
+# Context: leading user messages (anchor the goal), trailing messages (current
+# topic), and the per-message excerpt cap.
+head_user_messages = 2
+tail_messages = 6
+message_max_chars = 600
+
+# Wait before sampling (lets the transcript flush); scrollback lines for the
+# fallback path when an agent transcript can't be parsed.
+delay_seconds = 2
+context_lines = 40
 ```
 
 The `generator` is any CLI that accepts a prompt as its final argument and prints
-a short response. The plugin takes the first line of output, strips quotes, and
-truncates to `max_label_length` characters. Labels are short verb-first phrases
-(e.g. `Fixing devcontainer Java`).
+a short response. The plugin takes the first line, strips quotes, validates it
+isn't prose, and truncates to `max_label_length` characters. Labels are short
+verb-first phrases (e.g. `Fixing devcontainer Java`).
 
 ## Requirements
 

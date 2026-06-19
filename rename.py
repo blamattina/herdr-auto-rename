@@ -298,7 +298,11 @@ def clean_pane(text, context_lines):
 
 # ----------------------------------------------------------------- generation
 def sanitize(label):
-    if not label or ". " in label:
+    if not label:
+        return ""
+    if ". " in label or "?" in label or "!" in label:  # prose / questions / echoes
+        return ""
+    if label.startswith("<") or label.startswith("["):  # tags / markers
         return ""
     words = label.split()
     if len(words) > 5:

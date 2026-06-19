@@ -2,13 +2,13 @@ id = "blamattina.auto-rename"
 name = "Auto Rename"
 version = "0.1.0"
 min_herdr_version = "0.7.0"
-description = "Renames agent panes and workspaces with an AI-generated label based on their output"
+description = "Renames agent panes, tabs, and workspaces with an AI-generated label based on their output"
 platforms = ["macos", "linux"]
 
 [[events]]
 on = "pane.agent_status_changed"
-command = ["bash", "rename.sh"]
+command = ["python3", "rename.py"]
 
 [[events]]
 on = "pane.closed"
-command = ["bash", "clear_state.sh"]
+command = ["python3", "clear_state.py"]

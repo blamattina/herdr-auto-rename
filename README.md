@@ -90,7 +90,7 @@ truncates to `max_label_length` characters. Labels are short verb-first phrases
 ## Requirements
 
 - herdr 0.7.0+
-- `python3` (parses the event JSON)
+- `python3` (3.9+; runs the plugin)
 - A coding-agent CLI on your `PATH` (Claude Code by default)
 
 ## License
